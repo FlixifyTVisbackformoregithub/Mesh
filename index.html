@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mesh | Proxy</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap" rel="stylesheet">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #000;
+        height: 100vh;
+        font-family: cal sans;
+        display: flex;
+        align-items: flex-end;
+        padding: 20px;
+        gap: 12px;
+      }
+
+      .tabs-container {
+        width: 350px;
+        height: 810px;
+        background: rgba(25, 25, 35, 0.9);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+      }
+
+      .tabs-container::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .tabs-container::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .tabs-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+      }
+
+      .new-tab-btn {
+        background: rgba(255, 255, 255, 0.04);
+        border: none;
+        color: #aaa;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-family: cal sans;
+        align-self: center;
+        margin-bottom: 8px;
+        flex-shrink: 0;
+      }
+
+      .new-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .tab {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        min-height: 50px;
+      }
+
+      .tab:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .tab.active {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
+      .tab-icon {
+        color: #aaa;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      .tab.active .tab-icon {
+        color: #ccc;
+      }
+
+      .tab-favicon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        display: none;
+      }
+
+      .tab-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .tab-title {
+        color: #aaa;
+        font-size: 12px;
+        font-family: cal sans;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+      }
+
+      .tab.active .tab-title {
+        color: #ccc;
+      }
+
+      .tab-url {
+        color: #666;
+        font-size: 10px;
+        font-family: cal sans;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+      }
+
+      .tab-close {
+        background: rgba(255, 255, 255, 0.04);
+        border: none;
+        color: #666;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      .tab:hover .tab-close {
+        opacity: 1;
+      }
+
+      .tab-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #aaa;
+      }
+
+      .tab-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #60a5fa, transparent);
+        opacity: 0;
+        border-radius: 8px 8px 0 0;
+        overflow: hidden;
+      }
+
+      .tab.loading .tab-loading {
+        opacity: 1;
+        animation: loadingBar 2s infinite;
+      }
+
+      @keyframes loadingBar {
+        0% {
+          transform: translateX(-100%);
+        }
+
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .browser-container {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .iframe-wrapper {
+        width: 1200px;
+        height: 750px;
+        background: rgba(20, 20, 20, 0.7);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        overflow: hidden;
+        transition: transform 0.4s ease, box-shadow 0.3s ease;
+        position: relative;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: none;
+      }
+
+      iframe.active {
+        display: block;
+      }
+
+      .nav-bar {
+        margin-top: 12px;
+        width: 1200px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        background: rgba(25, 25, 35, 0.9);
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(10px);
+        color: #ccc;
+        font-family: cal sans;
+      }
+
+      .nav-button,
+      .nav-icon {
+        background: rgba(255, 255, 255, 0.04);
+        border: none;
+        color: #aaa;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 6px;
+        transition: background 0.2s;
+        cursor: pointer;
+        font-family: cal sans;
+      }
+
+      .nav-button-r {
+        background: rgba(255, 255, 255, 0.04);
+        border: none;
+        color: #aaa;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 6px;
+        transition: background 0.2s;
+        cursor: pointer;
+        transition: transform 0.5s ease;
+        font-family: cal sans;
+      }
+
+      .nav-button-r:hover {
+        transform: rotate(360deg);
+      }
+
+      .nav-button:hover,
+      .nav-icon:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .input-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 12px;
+        flex: 1;
+        font-family: cal sans;
+      }
+
+      .nav-input {
+        flex: 1;
+        padding: 6px 10px;
+        background: transparent;
+        border: none;
+        color: #ccc;
+        font-size: 14px;
+        outline: none;
+        font-family: cal sans;
+      }
+
+      .nav-input::placeholder {
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tabs-container">
+      <button class="new-tab-btn" id="newTabBtn">
+        <i data-lucide="plus"></i>
+      </button>
+      <div class="tab active" data-tab-id="1">
+        <div class="tab-loading"></div>
+        <i data-lucide="home" class="tab-icon"></i>
+        <img class="tab-favicon" style="display: none;">
+        <div class="tab-content">
+          <div class="tab-title">Home</div>
+          <div class="tab-url">iframedhome.html</div>
+        </div>
+        <button class="tab-close">×</button>
+      </div>
+    </div>
+    <div class="browser-container">
+      <div class="iframe-wrapper">
+        <iframe src="iframedhome.html" class="active" data-tab-id="1"></iframe>
+      </div>
+      <div class="nav-bar">
+        <button class="nav-button">
+          <i data-lucide="layout-dashboard"></i>
+        </button>
+        <div class="input-container">
+          <i data-lucide="settings" class="nav-icon"></i>
+          <input type="text" class="nav-input" placeholder="Search or Type URL" />
+        </div>
+        <button class="nav-button">
+          <i data-lucide="arrow-left"></i>
+        </button>
+        <button class="nav-button">
+          <i data-lucide="arrow-right"></i>
+        </button>
+        <button class="nav-button-r">
+          <i data-lucide="refresh-ccw"></i>
+        </button>
+      </div>
+    </div>
+    <script>
+      lucide.createIcons();
+    </script>
+    <script>
+      lucide.createIcons();
+      let tabCounter = 1;
+      let activeTabId = 1;
+      const input = document.querySelector('.nav-input');
+
+      function getWebsiteInfo(url, searchQuery = null) {
+        let title, icon, domain;
+        if (searchQuery) {
+          return {
+            title: `Search: ${searchQuery}`,
+            icon: 'search',
+            domain: 'search'
+          };
+        }
+        if (url === 'iframedhome.html') {
+          return {
+            title: 'Home',
+            icon: 'home',
+            domain: 'home'
+          };
+        }
+        try {
+          const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+          domain = urlObj.hostname.replace('www.', '');
+          title = domain.charAt(0).toUpperCase() + domain.slice(1).split('.')[0];
+          if (domain.includes('google')) icon = 'search';
+          else if (domain.includes('youtube')) icon = 'play';
+          else if (domain.includes('github')) icon = 'github';
+          else if (domain.includes('twitter') || domain.includes('x.com')) icon = 'twitter';
+          else if (domain.includes('facebook')) icon = 'facebook';
+          else if (domain.includes('instagram')) icon = 'instagram';
+          else if (domain.includes('linkedin')) icon = 'linkedin';
+          else icon = 'globe';
+        } catch (e) {
+          title = 'New Tab';
+          icon = 'globe';
+          domain = 'unknown';
+        }
+        return {
+          title,
+          icon,
+          domain
+        };
+      }
+
+      function updateTabInfo(tabId, url, searchQuery = null) {
+        const tab = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+        if (!tab) return;
+        const info = getWebsiteInfo(url, searchQuery);
+        const tabTitle = tab.querySelector('.tab-title');
+        const tabUrl = tab.querySelector('.tab-url');
+        const tabIcon = tab.querySelector('.tab-icon');
+        const tabFavicon = tab.querySelector('.tab-favicon');
+        tabTitle.textContent = info.title;
+        if (searchQuery) {
+          tabUrl.textContent = `Search: ${searchQuery}`;
+        } else if (url === 'iframedhome.html') {
+          tabUrl.textContent = 'Home';
+        } else {
+          tabUrl.textContent = info.domain;
+        }
+        tabIcon.setAttribute('data-lucide', info.icon);
+        if (info.domain !== 'home' && info.domain !== 'search' && info.domain !== 'unknown') {
+          const faviconUrl = `https://www.google.com/s2/favicons?domain=${info.domain}&sz=32`;
+          tabFavicon.src = faviconUrl;
+          tabFavicon.onload = function() {
+            tabIcon.style.display = 'none';
+            tabFavicon.style.display = 'block';
+          };
+          tabFavicon.onerror = function() {
+            tabIcon.style.display = 'block';
+            tabFavicon.style.display = 'none';
+          };
+        } else {
+          tabIcon.style.display = 'block';
+          tabFavicon.style.display = 'none';
+        }
+        lucide.createIcons();
+      }
+
+      function setTabLoading(tabId, loading) {
+        const tab = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+        if (tab) {
+          if (loading) {
+            tab.classList.add('loading');
+          } else {
+            tab.classList.remove('loading');
+          }
+        }
+      }
+
+      function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('iframe').forEach(iframe => iframe.classList.remove('active'));
+        const selectedTab = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (selectedTab) {
+          if (selectedTab.classList.contains('tab')) {
+            selectedTab.classList.add('active');
+          }
+          const selectedIframe = document.querySelector(`iframe[data-tab-id="${tabId}"]`);
+          if (selectedIframe) {
+            selectedIframe.classList.add('active');
+            const currentSrc = selectedIframe.src;
+            if (currentSrc.includes('/active/embed.html?url=')) {
+              const originalUrl = decodeURIComponent(currentSrc.split('url=')[1]);
+              input.value = originalUrl;
+            } else if (currentSrc.includes('/active/embed.html?URL=')) {
+              const searchUrl = decodeURIComponent(currentSrc.split('URL=')[1]);
+              if (searchUrl.includes('search?q=')) {
+                input.value = decodeURIComponent(searchUrl.split('search?q=')[1]);
+              } else {
+                input.value = searchUrl;
+              }
+            } else {
+              input.value = currentSrc === 'iframedhome.html' ? '' : currentSrc;
+            }
+          }
+        }
+        activeTabId = tabId;
+      }
+
+      function closeTab(tabId) {
+        const tabsCount = document.querySelectorAll('.tab').length;
+        if (tabsCount <= 1) return;
+        const tab = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+        const iframe = document.querySelector(`iframe[data-tab-id="${tabId}"]`);
+        if (tab) tab.remove();
+        if (iframe) iframe.remove();
+        if (activeTabId == tabId) {
+          const firstTab = document.querySelector('.tab');
+          if (firstTab) {
+            const firstTabId = firstTab.getAttribute('data-tab-id');
+            switchTab(firstTabId);
+          }
+        }
+      }
+
+      function createTab() {
+        tabCounter++;
+        const tabId = tabCounter;
+        const tabElement = document.createElement('div');
+        tabElement.className = 'tab';
+        tabElement.setAttribute('data-tab-id', tabId);
+        tabElement.innerHTML = `
+          
+							
+							<div class="tab-loading"></div>
+							<i data-lucide="home" class="tab-icon"></i>
+							<img class="tab-favicon" style="display: none;">
+								<div class="tab-content">
+									<div class="tab-title">Home</div>
+									<div class="tab-url">iframedhome.html</div>
+								</div>
+								<button class="tab-close">×</button>
+        `;
+        const iframeElement = document.createElement('iframe');
+        iframeElement.src = 'iframedhome.html';
+        iframeElement.setAttribute('data-tab-id', tabId);
+        iframeElement.addEventListener('load', function() {
+          setTabLoading(tabId, false);
+        });
+        document.querySelector('.tabs-container').appendChild(tabElement);
+        document.querySelector('.iframe-wrapper').appendChild(iframeElement);
+        lucide.createIcons();
+        switchTab(tabId);
+        updateTabInfo(tabId, 'iframedhome.html');
+      }
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('.tab') && !e.target.classList.contains('tab-close')) {
+          const tabId = e.target.closest('.tab').getAttribute('data-tab-id');
+          switchTab(tabId);
+        }
+        if (e.target.classList.contains('tab-close')) {
+          e.stopPropagation();
+          const tabId = e.target.closest('.tab').getAttribute('data-tab-id');
+          closeTab(tabId);
+        }
+        if (e.target.closest('#newTabBtn')) {
+          createTab();
+        }
+      });
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const value = input.value.trim();
+          if (!value) return;
+          const activeIframe = document.querySelector(`iframe[data-tab-id="${activeTabId}"]`);
+          if (activeIframe) {
+            setTabLoading(activeTabId, true);
+            const isURL = value.startsWith('http://') || value.startsWith('https://') || (value.includes('.') && !value.includes(' '));
+            let searchQuery = null;
+            let finalUrl = value;
+            if (isURL) {
+              if (!value.startsWith('http')) {
+                finalUrl = 'https://' + value;
+              }
+              activeIframe.src = `/active/embed.html?url=${encodeURIComponent(finalUrl)}`;
+              updateTabInfo(activeTabId, finalUrl);
+            } else {
+              searchQuery = value;
+              const query = encodeURIComponent(value);
+              activeIframe.src = `/active/embed.html?URL=https://search.brave.com/search?q=${query}`;
+              updateTabInfo(activeTabId, `https://search.brave.com/search?q=${query}`, searchQuery);
+            }
+            activeIframe.onload = function() {
+              setTabLoading(activeTabId, false);
+            };
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
