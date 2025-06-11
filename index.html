@@ -463,7 +463,7 @@
             if (currentSrc.includes('/active/embed.html?url=')) {
               const originalUrl = decodeURIComponent(currentSrc.split('url=')[1]);
               input.value = originalUrl;
-            } else if (currentSrc.includes('/active/embed.html?URL=')) {
+            } else if (currentSrc.includes('/active/embed.html?url=')) {
               const searchUrl = decodeURIComponent(currentSrc.split('URL=')[1]);
               if (searchUrl.includes('search?q=')) {
                 input.value = decodeURIComponent(searchUrl.split('search?q=')[1]);
