@@ -557,7 +557,7 @@
             } else {
               searchQuery = value;
               const query = encodeURIComponent(value);
-              activeIframe.src = `/active/embed.html?URL=https://search.brave.com/search?q=${query}`;
+              activeIframe.src = `/active/embed.html?url=https://search.brave.com/search?q=${query}`;
               updateTabInfo(activeTabId, `https://search.brave.com/search?q=${query}`, searchQuery);
             }
             activeIframe.onload = function() {
